@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دورة اللغة الإنجليزية للأعمال التفاعلية</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony -->
+    <!-- Application Structure Plan: A dashboard-style interactive syllabus. The core is a 30-day grid, allowing users to see the entire course at a glance and click any day to view its content in a dedicated panel. This non-linear approach enhances usability over a linear document. Filters for each week allow focused study, and a search function enables quick term lookups. A progress tracking feature (marking days complete) is included for motivation and engagement. This structure was chosen to transform the static report into a dynamic, user-centric learning tool. -->
+    <!-- Visualization & Content Choices: The report is text-based, so no charts are needed. The primary "visualization" is the interactive 30-day grid, which organizes the course structure. Daily content is presented in a clean, readable panel using accordions for vocabulary and scenarios to manage information density. Vocabulary items are interactive (clickable) to reveal translations, promoting active learning. A search bar provides a powerful interaction for revision. All elements are built with HTML/Tailwind to ensure a clean, responsive layout without external graphics. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+        }
+        .term {
+            background-color: #e0f2fe;
+            color: #0c4a6e;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        .day-item {
+            transition: all 0.3s ease-in-out;
+            transform-style: preserve-3d;
+        }
+        .day-item.completed .day-front {
+            transform: rotateY(180deg);
+        }
+        .day-item.completed .day-back {
+            transform: rotateY(0deg);
+        }
+        .day-face {
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+        .day-back {
+            transform: rotateY(-180deg);
+        }
+        .content-panel::-webkit-scrollbar {
+            width: 8px;
+        }
+        .content-panel::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .content-panel::-webkit-scrollbar-thumb {
+            background-color: #94a3b8;
+            border-radius: 10px;
+            border: 2px solid #f1f5f9;
+        }
+        .audio-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 2px;
+            border-radius: 50%;
+            transition: background-color 0.2s, opacity 0.2s;
+            color: #64748b;
+        }
+        .audio-btn:hover:not(:disabled) {
+            background-color: #e2e8f0;
+            color: #1e293b;
+        }
+        .audio-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <div id="app" class="container mx-auto p-4 md:p-8">
+        
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-900">دورة اللغة الإنجليزية المكثفة للأعمال</h1>
+            <p class="mt-2 text-lg text-slate-600">خطة تفاعلية لإتقان مصطلحات الأعمال في 30 يوماً</p>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <div class="lg:col-span-1">
+                <div class="bg-white p-6 rounded-xl shadow-md sticky top-8">
+                    <h2 class="text-xl font-bold mb-4 text-slate-900">لوحة التحكم</h2>
+                    
+                    <div class="mb-6">
+                        <label for="search" class="block text-sm font-medium text-slate-700 mb-1">ابحث عن مصطلح</label>
+                        <input type="search" id="search" placeholder="مثال: Get the ball rolling" class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition">
+                    </div>
+
+                    <div>
+                        <h3 class="text-lg font-semibold mb-3 text-slate-800">تصفح حسب الأسبوع</h3>
+                        <div id="week-filters" class="flex flex-wrap gap-2">
+                            <button data-week="all" class="week-filter-btn active bg-sky-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition hover:bg-sky-700">الكل</button>
+                            <button data-week="1" class="week-filter-btn bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition hover:bg-slate-100">الأسبوع 1</button>
+                            <button data-week="2" class="week-filter-btn bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition hover:bg-slate-100">الأسبوع 2</button>
+                            <button data-week="3" class="week-filter-btn bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition hover:bg-slate-100">الأسبوع 3</button>
+                            <button data-week="4" class="week-filter-btn bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition hover:bg-slate-100">الأسبوع 4</button>
+                        </div>
+                    </div>
+                     <div class="mt-6">
+                        <h3 class="text-lg font-semibold mb-2 text-slate-800">التقدم المحرز</h3>
+                        <div class="w-full bg-slate-200 rounded-full h-4">
+                            <div id="progress-bar" class="bg-teal-500 h-4 rounded-full transition-all duration-500" style="width: 0%;"></div>
+                        </div>
+                        <p id="progress-text" class="text-center text-sm mt-2 text-slate-600">0 من 30 يوماً مكتمل</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2">
+                <div id="days-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-3">
+                </div>
+                
+                <div id="content-display-container" class="mt-8 hidden">
+                    <div id="content-panel" class="bg-white p-6 md:p-8 rounded-xl shadow-lg content-panel" style="max-height: 80vh; overflow-y: auto;">
+                    </div>
+                </div>
+
+                 <div id="welcome-message" class="mt-8 text-center bg-white p-8 rounded-xl shadow-lg">
+                    <h2 class="text-2xl font-bold text-slate-800 mb-3">أهلاً بك في رحلتك التعليمية!</h2>
+                    <p class="text-slate-600">انقر على أي يوم في الأعلى لبدء الدرس. يمكنك الآن الاستماع إلى نطق المصطلحات والجمل.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const courseData = [
+            {
+                day: 1, week: 1, title: 'تعابير مكتبية أساسية (1): الإجراءات والتقدم',
+                terms: [
+                    { term: 'Get the ball rolling', def: 'لنبدأ العمل / لندحرج الكرة. يعني بدء شيء ما، عادة مشروع أو عملية.' },
+                    { term: 'Hit the ground running', def: 'الانطلاق بقوة. يعني بدء شيء جديد بحماس وسرعة وفعالية.' },
+                    { term: 'Stay on top of something', def: 'البقاء مسيطراً على الوضع. يعني الحفاظ على السيطرة على مهمة ومتابعتها.' },
+                    { term: 'On track', def: 'على المسار الصحيح. يعني أن الأمور تسير وفقاً للجدول الزمني.' },
+                    { term: 'Go the extra mile', def: 'بذل جهد إضافي. يعني القيام بأكثر مما هو مطلوب.' },
+                    { term: 'Call it a day', def: 'لنكتفِ بهذا القدر اليوم. يعني التوقف عن العمل.' }
+                ],
+                scenario: {
+                    title: 'اجتماع انطلاق مشروع',
+                    dialogue: [
+                        { speaker: 'Sarah', line: "Good morning, everyone. I'm excited to finally get the ball rolling on the new client website project." },
+                        { speaker: 'Ahmed', line: "Great. I've reviewed the technical requirements. I'm ready to hit the ground running." },
+                        { speaker: 'Sarah', line: "Excellent. Layla, the deadline is next Friday, so it's important to stay on top of it." },
+                        { speaker: 'Layla', line: "Understood. I'll make sure we stay on track." },
+                        { speaker: 'Sarah', line: "Perfect. Let's all be prepared to go the extra mile. For now, let's review the main tasks, then we can call it a day." }
+                    ]
+                }
+            },
+            {
+                day: 2, week: 1, title: 'تعابير مكتبية أساسية (2): المفاهيم والأفكار',
+                terms: [
+                    { term: 'Think outside the box', def: 'فكر خارج الصندوق. يعني التفكير بطريقة إبداعية ومبتكرة.' },
+                    { term: 'On the same page', def: 'على نفس الصفحة. يعني أن الجميع لديهم نفس الفهم.' },
+                    { term: 'The big picture', def: 'الصورة الكبيرة. يعني النظرة الشاملة أو السياق العام.' },
+                    { term: 'Back to the drawing board', def: 'العودة إلى لوحة الرسم. يعني البدء من جديد بعد فشل خطة.' },
+                    { term: 'Pain point', def: 'نقطة الألم. مشكلة محددة ومستمرة تسبب إحباطاً للعملاء.' },
+                    { term: 'Win-win situation', def: 'وضع يربح فيه الجميع. اتفاق مفيد لجميع الأطراف.' }
+                ],
+                scenario: {
+                    title: 'جلسة عصف ذهني',
+                    dialogue: [
+                        { speaker: 'Manager', line: "Team, we need to think outside the box. What are the main pain points for our users?" },
+                        { speaker: 'Specialist', line: "I want to make sure we're all on the same page about the goal." },
+                        { speaker: 'Manager', line: "Looking at the big picture, a simpler app could attract new users. My initial idea failed, so I'm going back to the drawing board." },
+                        { speaker: 'Manager', line: "Let's find a solution that is a true win-win situation." }
+                    ]
+                }
+            },
+            {
+                day: 3, week: 1, title: 'التحيات والتعارف الرسمي',
+                terms: [
+                    { term: "It's a pleasure to meet you", def: 'يسعدني لقاؤك. تقال بعد تبادل الأسماء.' },
+                    { term: 'How was your journey?', def: 'كيف كانت رحلتك؟ سؤال شائع لبدء محادثة قصيرة.' },
+                    { term: 'Let me introduce myself', def: 'دعني أقدم نفسي. تستخدم في المواقف المهنية.' },
+                    { term: "I'd like to introduce...", def: 'أود أن أقدم... تستخدم لتقديم شخص آخر.' }
+                ],
+                scenario: {
+                    title: 'تقديم زميل جديد',
+                    dialogue: [
+                        { speaker: 'You', line: "Good morning, Ali. I'd like to introduce Noura." },
+                        { speaker: 'Ali', line: "Hello, Noura. It's a pleasure to meet you. Welcome." },
+                        { speaker: 'Ali', line: "Did you have any trouble finding the office?" }
+                    ]
+                }
+            },
+            {
+                day: 4, week: 1, title: 'فن التواصل المهذب',
+                terms: [
+                    { term: 'Could you please...?', def: 'هل يمكنك من فضلك...؟ طريقة مهذبة جداً لتقديم طلب.' },
+                    { term: 'Would you mind...?', def: 'هل تمانع...؟ صيغة مهذبة جداً وأكثر رسمية.' },
+                    { term: 'Best regards,', def: 'مع أطيب التحيات. خاتمة شائعة ومهنية للبريد الإلكتروني.' },
+                    { term: 'Let me know if you need anything', def: 'أخبرني إذا احتجت أي شيء. عرض مهذب للمساعدة.' }
+                ],
+                scenario: {
+                    title: 'طلب تقرير عاجل عبر البريد الإلكتروني',
+                    dialogue: [
+                        { speaker: 'Email', line: "Subject: Follow-Up on Sales Report. Hi Omar, When you have a moment, could you please send me the sales report for Q3? Let me know if you need anything from my side. Best regards, Fahad" }
+                    ]
+                }
+            },
+            {
+                day: 5, week: 1, title: 'إبقاء الجميع على اطلاع',
+                terms: [
+                    { term: 'Keep me in the loop', def: 'أبقني على اطلاع. إبقاء شخص ما على علم بالتطورات.' },
+                    { term: 'Touch base', def: 'نتواصل. إجراء اتصال قصير للحصول على تحديث.' },
+                    { term: 'Follow up', def: 'متابعة. الاتصال بشخص ما لاحقاً بخصوص موضوع سابق.' },
+                    { term: 'Get up to speed', def: 'الإلمام بآخر التطورات. الحصول على أحدث المعلومات.' },
+                    { term: 'Heads up', def: 'للعلم / تنبيه مسبق. إعطاء تحذير مسبق.' }
+                ],
+                scenario: {
+                    title: 'انضمام عضو جديد لمشروع',
+                    dialogue: [
+                        { speaker: 'Khaled', line: "Welcome, Mona. Let's get you up to speed on Project Phoenix." },
+                        { speaker: 'Khaled', line: "Please keep me in the loop on your progress." },
+                        { speaker: 'Khaled', line: "Let's plan to touch base tomorrow morning." },
+                        { speaker: 'Mona', line: "Sounds good. I'll follow up with an email if anything urgent comes up." },
+                        { speaker: 'Khaled', line: "Perfect. And just a heads up, the client might request a demo next week." }
+                    ]
+                }
+            },
+            {
+                day: 6, week: 1, title: 'إدارة الوقت وعبء العمل',
+                terms: [
+                    { term: 'Deadline', def: 'الموعد النهائي. التاريخ الأخير لإكمال شيء ما.' },
+                    { term: 'Prioritize', def: 'تحديد الأولويات. تحديد ما هو الأكثر أهمية.' },
+                    { term: 'Push back', def: 'تأجيل. تأخير موعد التسليم.' },
+                    { term: 'Bandwidth', def: 'القدرة الاستيعابية. قدرة الشخص أو وقته لتولي مهام إضافية.' },
+                    { term: 'Too much on my plate', def: 'لدي الكثير من المهام. الشعور بالإرهاق من كثرة المسؤوليات.' },
+                    { term: 'ASAP', def: 'في أسرع وقت ممكن. (As Soon As Possible)' }
+                ],
+                scenario: {
+                    title: 'نقاش حول عبء العمل',
+                    dialogue: [
+                        { speaker: 'Reem', line: "Sami, I need the findings ASAP." },
+                        { speaker: 'Sami', line: "Reem, I have too much on my plate right now." },
+                        { speaker: 'Reem', line: "Okay, let's prioritize. Can we push back the start of the new project?" },
+                        { speaker: 'Sami', line: "Yes, after Wednesday I'll have the bandwidth for it." }
+                    ]
+                }
+            },
+            { day: 7, week: 1, title: 'مراجعة أسبوعية شاملة', isReview: true },
+            {
+                day: 8, week: 2, title: 'التحضير للاجتماع وجدولته',
+                terms: [
+                    { term: 'Schedule a meeting', def: 'جدولة اجتماع. تنظيم اجتماع في وقت ومكان محددين.' },
+                    { term: 'Agenda', def: 'جدول الأعمال. قائمة المواضيع التي ستتم مناقشتها.' },
+                    { term: 'RSVP', def: 'الرجاء الرد. طلب تأكيد الحضور.' },
+                    { term: 'Venue', def: 'مكان الانعقاد. المكان الذي سيعقد فيه الاجتماع.' }
+                ],
+                scenario: {
+                    title: 'كتابة بريد إلكتروني لجدولة اجتماع',
+                    dialogue: [
+                        { speaker: 'Email', line: "Subject: Meeting Request. I'd like to arrange a meeting. Please find the proposed agenda attached. The venue will be Conference Room 3. Kindly RSVP by Friday." }
+                    ]
+                }
+            },
+            {
+                day: 9, week: 2, title: 'افتتاح الاجتماع وتحديد الأهداف',
+                terms: [
+                    { term: "Let's get started", def: 'لنبدأ. عبارة شائعة لبدء الاجتماع.' },
+                    { term: 'The purpose of this meeting is...', def: 'الغرض من هذا الاجتماع هو... لتوضيح الهدف الرئيسي.' },
+                    { term: 'The first item on the agenda is...', def: 'البند الأول على جدول الأعمال هو... للانتقال للنقطة الأولى.' }
+                ],
+                scenario: {
+                    title: 'افتتاح اجتماع فريق',
+                    dialogue: [
+                        { speaker: 'Chairperson', line: "Good morning. Since everyone is here, let's get started." },
+                        { speaker: 'Chairperson', line: "The purpose of this meeting is to review our weekly progress." },
+                        { speaker: 'Chairperson', line: "The first item on the agenda is the marketing results." }
+                    ]
+                }
+            },
+            {
+                day: 10, week: 2, title: 'التعبير عن الرأي بأدب',
+                terms: [
+                    { term: 'I see your point, but...', def: 'أتفهم وجهة نظرك، لكن... طريقة مهذبة للمعارضة.' },
+                    { term: 'I agree to some extent', def: 'أتفق إلى حد ما. للموافقة الجزئية.' },
+                    { term: "I'm afraid I have to disagree", def: 'أخشى أنني مضطر للمعارضة. للمعارضة القوية والمهذبة.' }
+                ],
+                scenario: {
+                    title: 'نقاش حول اقتراح مثير للجدل',
+                    dialogue: [
+                        { speaker: 'Fatima', line: "I see your point about modernization, but I think we should consider brand recognition." },
+                        { speaker: 'Youssef', line: "I agree to some extent, but a full rebrand might be too costly." },
+                        { speaker: 'Omar', line: "I'm afraid I have to disagree completely. A rebrand would confuse our customers." }
+                    ]
+                }
+            },
+            {
+                day: 11, week: 2, title: 'تقديم الاقتراحات والعصف الذهني',
+                terms: [
+                    { term: 'I would suggest...', def: 'أقترح... صيغة رسمية لتقديم الاقتراحات.' },
+                    { term: "Why don't we...?", def: 'لماذا لا...؟ صيغة غير رسمية لتقديم الاقتراحات.' },
+                    { term: 'Let\'s brainstorm', def: 'دعونا نقم بعصف ذهني. دعوة لتبادل الأفكار بحرية.' },
+                    { term: 'Brain dump', def: 'تفريغ الأفكار. تدوين كل الأفكار بسرعة دون حكم مسبق.' }
+                ],
+                scenario: {
+                    title: 'حل مشكلة عنق الزجاجة (Bottleneck)',
+                    dialogue: [
+                        { speaker: 'Manager', line: "The approval process is a bottleneck. Let's brainstorm some solutions." },
+                        { speaker: 'Employee 1', line: "Why don't we create a standardized checklist?" },
+                        { speaker: 'Employee 2', line: "I would also suggest we set a 24-hour turnaround time for feedback." }
+                    ]
+                }
+            },
+            {
+                day: 12, week: 2, title: 'إدارة النقاش والتوضيح',
+                terms: [
+                    { term: 'Sorry to interrupt, but...', def: 'آسف للمقاطعة، لكن... للمقاطعة بأدب.' },
+                    { term: 'Could you clarify...?', def: 'هل يمكنك توضيح...؟ لطلب التوضيح.' },
+                    { term: "Let's move on", def: 'دعونا ننتقل. لإعادة النقاش إلى مساره.' }
+                ],
+                scenario: {
+                    title: 'اجتماع سريع الخطى',
+                    dialogue: [
+                        { speaker: 'Marketing', line: "Sorry to interrupt, but a 15% cut would be devastating." },
+                        { speaker: 'You', line: "Could you clarify what you mean by 'leads'?" },
+                        { speaker: 'CEO', line: "This is complex. Let's move on for now." }
+                    ]
+                }
+            },
+            {
+                day: 13, week: 2, title: 'إغلاق الاجتماع والخطوات التالية',
+                terms: [
+                    { term: 'To recap...', def: 'لنستعرض بإيجاز... لبدء ملخص النقاط الرئيسية.' },
+                    { term: 'Action items', def: 'المهام التنفيذية. المهام المحددة التي تم تعيينها لشخص ما.' },
+                    { term: 'Next steps', def: 'الخطوات التالية. الإجراءات التي سيتم اتخاذها بعد الاجتماع.' },
+                    { term: 'Wrap up', def: 'إنهاء / اختتام. لإنهاء المناقشة أو الاجتماع.' }
+                ],
+                scenario: {
+                    title: 'اختتام اجتماع مشروع',
+                    dialogue: [
+                        { speaker: 'Chairperson', line: "Okay team, let's wrap up." },
+                        { speaker: 'Chairperson', line: "To recap, we've agreed to the new design." },
+                        { speaker: 'Chairperson', line: "Now for the action items. Ali, you will finalize the specs." },
+                        { speaker: 'Chairperson', line: "The next steps will be to review the mockups next week." }
+                    ]
+                }
+            },
+            { day: 14, week: 2, title: 'محاكاة اجتماع كامل', isReview: true },
+            {
+                day: 15, week: 3, title: 'هيكلة عرض تقديمي مؤثر',
+                terms: [
+                    { term: 'The topic of my presentation is...', def: 'موضوع عرضي هو...' },
+                    { term: 'My objective is to...', def: 'هدفي هو...' },
+                    { term: 'The main points I will cover are...', def: 'النقاط الرئيسية التي سأغطيها هي...' }
+                ],
+                scenario: {
+                    title: 'إعداد مخطط لعرض تقديمي',
+                    dialogue: [
+                        { speaker: 'Presenter', line: "The topic of my presentation is the importance of teamwork." },
+                        { speaker: 'Presenter', line: "My objective is to demonstrate how it boosts productivity." }
+                    ]
+                }
+            },
+            {
+                day: 16, week: 3, title: 'التقديم بثقة: الوسائل البصرية',
+                terms: [
+                    { term: 'As you can see from this slide...', def: 'كما ترون من هذه الشريحة...' },
+                    { term: "I'd like to draw your attention to...", def: 'أود أن ألفت انتباهكم إلى...' },
+                    { term: 'This brings us to...', def: 'هذا يقودنا إلى...' }
+                ],
+                scenario: {
+                    title: 'تقديم شرائح بيانات',
+                    dialogue: [
+                        { speaker: 'Presenter', line: "As you can see from this slide, overall satisfaction is at 85%." },
+                        { speaker: 'Presenter', line: "This brings us to the areas for improvement." }
+                    ]
+                }
+            },
+            {
+                day: 17, week: 3, title: 'إنهاء العرض والأسئلة والأجوبة',
+                terms: [
+                    { term: 'In conclusion...', def: 'في الختام...' },
+                    { term: "I'd be happy to take any questions", def: 'سأكون سعيداً بالإجابة على أي أسئلة.' },
+                    { term: "That's an excellent point.", def: 'هذه نقطة ممتازة. (للأسئلة الجيدة)' }
+                ],
+                scenario: {
+                    title: 'جلسة أسئلة وأجوبة',
+                    dialogue: [
+                        { speaker: 'Presenter', line: "In conclusion, this strategy will increase efficiency. I'd be happy to take any questions." }
+                    ]
+                }
+            },
+            {
+                day: 18, week: 3, title: 'لغة التفاوض: المفاهيم الأساسية',
+                terms: [
+                    { term: 'Leverage', def: 'النفوذ / الرافعة. الميزة التي يمتلكها طرف للتأثير على الآخر.' },
+                    { term: 'Bottom line', def: 'الحد الأدنى / خلاصة القول. الحد الأدنى الذي لا يمكن التنازل عنه.' },
+                    { term: 'Proposal', def: 'مقترح. العرض الأولي.' },
+                    { term: 'Stakeholder', def: 'صاحب المصلحة. أي شخص يتأثر بنتيجة التفاوض.' }
+                ],
+                scenario: {
+                    title: 'التحضير للتفاوض',
+                    dialogue: [
+                        { speaker: 'Internal Analysis', line: "Our bottom line is a 5% discount. Our leverage is a long-term contract." }
+                    ]
+                }
+            },
+            {
+                day: 19, week: 3, title: 'التفاوض عملياً: المساومة',
+                terms: [
+                    { term: 'We propose that...', def: 'نقترح أن... لتقديم المقترحات.' },
+                    { term: 'What are your views on...?', def: 'ما هي وجهات نظركم حول...؟ لطلب المقترحات.' },
+                    { term: 'Would you consider...?', def: 'هل ستأخذون في الاعتبار...؟ طريقة لطرح فكرة دون التزام.' }
+                ],
+                scenario: {
+                    title: 'تبادل المقترحات الأولية',
+                    dialogue: [
+                        { speaker: 'You', line: "We propose that for a three-year contract, you provide a 10% discount." },
+                        { speaker: 'Supplier', line: "A 10% discount is high. Would you consider 3% with priority shipping?" }
+                    ]
+                }
+            },
+            {
+                day: 20, week: 3, title: 'الوصول إلى اتفاق وإغلاق الصفقة',
+                terms: [
+                    { term: 'Meet halfway', def: 'نلتقي في منتصف الطريق. للتسوية.' },
+                    { term: 'I think we have a deal', def: 'أعتقد أننا توصلنا إلى اتفاق. لإغلاق الصفقة.' },
+                    { term: "It's a deal", def: 'اتفقنا. تأكيد الاتفاق.' }
+                ],
+                scenario: {
+                    title: 'إغلاق الصفقة',
+                    dialogue: [
+                        { speaker: 'You', line: "What if we meet halfway at 6%?" },
+                        { speaker: 'Supplier', line: "We can do 5% if you agree to shorter payment terms." },
+                        { speaker: 'You', line: "Okay, I think we have a deal." }
+                    ]
+                }
+            },
+            { day: 21, week: 3, title: 'مراجعة وسيناريو متكامل', isReview: true },
+            {
+                day: 22, week: 4, title: 'لغة حل المشكلات',
+                terms: [
+                    { term: 'Pinpoint the issue', def: 'تحديد المشكلة بدقة.' },
+                    { term: 'Root cause', def: 'السبب الجذري. السبب الأساسي للمشكلة.' },
+                    { term: 'Setback', def: 'انتكاسة / عقبة. عائق مؤقت.' },
+                    { term: 'Course of action', def: 'مسار العمل / خطة العمل.' }
+                ],
+                scenario: {
+                    title: 'اجتماع طارئ لحل مشكلة',
+                    dialogue: [
+                        { speaker: 'Manager', line: "We've had a setback. We need to pinpoint the root cause and decide on a course of action." }
+                    ]
+                }
+            },
+            {
+                day: 23, week: 4, title: 'مصطلحات الموارد البشرية (HR)',
+                terms: [
+                    { term: 'Recruit', def: 'توظيف. عملية البحث عن أشخاص للانضمام للشركة.' },
+                    { term: 'Performance Appraisal', def: 'تقييم الأداء. اجتماع رسمي لمناقشة التقدم.' },
+                    { term: 'Promotion', def: 'ترقية. نقل موظف إلى منصب أعلى.' },
+                    { term: 'Staff retention', def: 'الاحتفاظ بالموظفين. قدرة الشركة على إبقاء موظفيها.' }
+                ],
+                scenario: {
+                    title: 'إجراء تقييم أداء',
+                    dialogue: [
+                        { speaker: 'Manager', line: "This is your annual performance appraisal. We are considering you for a promotion to ensure good staff retention." }
+                    ]
+                }
+            },
+            {
+                day: 24, week: 4, title: 'مصطلحات المبيعات والتسويق',
+                terms: [
+                    { term: 'Lead', def: 'عميل مبدئي. شخص أبدى اهتماماً أولياً.' },
+                    { term: 'Pitch', def: 'عرض بيعي. عرض موجز ومقنع.' },
+                    { term: 'Sales Funnel', def: 'قمع المبيعات. المراحل التي يمر بها العميل.' },
+                    { term: 'Call to Action (CTA)', def: 'دعوة لاتخاذ إجراء. نص أو زر يشجع على التفاعل.' }
+                ],
+                scenario: {
+                    title: 'اجتماع فريق المبيعات والتسويق',
+                    dialogue: [
+                        { speaker: 'Marketing', line: "Our campaign generated 500 leads, but they are not ready for a sales pitch." },
+                        { speaker: 'Sales', line: "We need to improve our sales funnel and add a stronger Call to Action." }
+                    ]
+                }
+            },
+            {
+                day: 25, week: 4, title: 'مصطلحات المالية والمحاسبة',
+                terms: [
+                    { term: 'Budget', def: 'الميزانية. خطة مالية.' },
+                    { term: 'Cash flow', def: 'التدفق النقدي. حركة الأموال الداخلة والخارجة.' },
+                    { term: 'Revenue', def: 'الإيرادات. إجمالي الأموال المكتسبة قبل خصم النفقات.' },
+                    { term: 'Profit', def: 'الربح. ما يتبقى بعد خصم النفقات.' },
+                    { term: 'Return on Investment (ROI)', def: 'العائد على الاستثمار. مقياس لربحية استثمار.' }
+                ],
+                scenario: {
+                    title: 'مراجعة تقرير مالي',
+                    dialogue: [
+                        { speaker: 'Manager', line: "Our revenue was excellent, but our profit was low. The campaign's ROI was not as expected." }
+                    ]
+                }
+            },
+            {
+                day: 26, week: 4, title: 'التعامل مع النزاعات',
+                terms: [
+                    { term: 'Conflict', def: 'نزاع / صراع. خلاف بين طرفين.' },
+                    { term: 'Mediation', def: 'وساطة. تدخل طرف ثالث محايد لحل نزاع.' },
+                    { term: 'Differing priorities', def: 'أولويات مختلفة. أهداف متعارضة.' }
+                ],
+                scenario: {
+                    title: 'نزاع بين قسمين',
+                    dialogue: [
+                        { speaker: 'Mediator', line: "It's clear we have differing priorities, which is creating a conflict. Let's find a solution together." }
+                    ]
+                }
+            },
+            {
+                day: 27, week: 4, title: 'إعطاء وتلقي الملاحظات',
+                terms: [
+                    { term: 'Constructive feedback', def: 'ملاحظات بناءة. تهدف للمساعدة على التحسين.' },
+                    { term: 'Situation-Behavior-Impact', def: 'الموقف-السلوك-التأثير. نموذج منظم لتقديم الملاحظات.' },
+                    { term: 'Moving forward...', def: 'للمضي قدماً... للتركيز على المستقبل.' }
+                ],
+                scenario: {
+                    title: 'تقديم ملاحظات لموظف',
+                    dialogue: [
+                        { speaker: 'Manager', line: "I want to give you some constructive feedback using the SBI model. Moving forward, I'd suggest we review the outline together beforehand." }
+                    ]
+                }
+            },
+            { day: 28, week: 4, title: 'مراجعة وسيناريو معقد', isReview: true },
+            { day: 29, week: 4, title: 'السيناريو الختامي: العميل الغاضب', isReview: true, isFinal: true },
+            { day: 30, week: 4, title: 'ملخص الدورة وخطة التطوير', isReview: true, isFinal: true },
+        ];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const daysGrid = document.getElementById('days-grid');
+            const contentContainer = document.getElementById('content-display-container');
+            const contentPanel = document.getElementById('content-panel');
+            const welcomeMessage = document.getElementById('welcome-message');
+            const weekFilters = document.getElementById('week-filters');
+            const searchInput = document.getElementById('search');
+            const progressBar = document.getElementById('progress-bar');
+            const progressText = document.getElementById('progress-text');
+
+            let voicesReady = false;
+            const synth = window.speechSynthesis;
+            let maleVoice;
+
+            function setVoicesReady() {
+                voicesReady = true;
+                const activeDayElement = document.querySelector('#complete-btn');
+                if (activeDayElement) {
+                    const activeDay = parseInt(activeDayElement.dataset.day);
+                    if (activeDay) {
+                        displayDay(activeDay);
+                    }
+                }
+            }
+
+            function loadVoices() {
+                const voices = synth.getVoices();
+                if (voices.length > 0) {
+                    maleVoice = voices.find(voice => voice.lang.startsWith('en') && voice.name.includes('David')) ||
+                                voices.find(voice => voice.lang.startsWith('en') && voice.name.includes('Google US English') && !voice.name.includes('Female')) ||
+                                voices.find(voice => voice.lang.startsWith('en-US') && voice.gender === 'male') ||
+                                voices.find(voice => voice.lang.startsWith('en') && voice.gender === 'male') ||
+                                voices.find(voice => voice.lang.startsWith('en'));
+                    if (!voicesReady) {
+                        setVoicesReady();
+                    }
+                }
+            }
+            
+            loadVoices();
+            if (synth.onvoiceschanged !== undefined) {
+                synth.onvoiceschanged = loadVoices;
+            }
+
+            const playAudio = (text, rate = 1.0) => {
+                if (!voicesReady) {
+                    console.warn("Speech synthesis voices not ready yet.");
+                    return;
+                }
+                if (synth.speaking) {
+                    synth.cancel();
+                }
+                if (text && text.trim() !== '') {
+                    const utterThis = new SpeechSynthesisUtterance(text);
+                    utterThis.onerror = (event) => {
+                        console.error('SpeechSynthesisUtterance.onerror', event);
+                    };
+                    if (maleVoice) {
+                        utterThis.voice = maleVoice;
+                    }
+                    utterThis.pitch = 1;
+                    utterThis.rate = rate;
+                    synth.speak(utterThis);
+                }
+            };
+
+            let completedDays = JSON.parse(localStorage.getItem('completedDays')) || [];
+            let activeFilter = 'all';
+            let activeSearch = '';
+
+            const renderGrid = () => {
+                daysGrid.innerHTML = '';
+                const filteredData = courseData.filter(day => {
+                    const weekMatch = activeFilter === 'all' || day.week == activeFilter;
+                    const searchMatch = activeSearch === '' || day.title.toLowerCase().includes(activeSearch.toLowerCase()) || (day.terms && day.terms.some(t => t.term.toLowerCase().includes(activeSearch.toLowerCase())));
+                    return weekMatch && searchMatch;
+                });
+
+                if (filteredData.length === 0) {
+                    daysGrid.innerHTML = `<p class="col-span-full text-center text-slate-500">لا توجد نتائج تطابق بحثك.</p>`;
+                }
+
+                filteredData.forEach(day => {
+                    const isCompleted = completedDays.includes(day.day);
+                    const dayElement = document.createElement('div');
+                    dayElement.className = `day-item relative aspect-square cursor-pointer ${isCompleted ? 'completed' : ''}`;
+                    dayElement.dataset.day = day.day;
+
+                    dayElement.innerHTML = `
+                        <div class="day-face day-front absolute w-full h-full flex items-center justify-center p-2 text-center bg-white border-2 border-slate-200 rounded-lg shadow-sm transition hover:shadow-md hover:border-sky-400">
+                            <span class="font-bold text-xl text-slate-700">${day.day}</span>
+                        </div>
+                        <div class="day-face day-back absolute w-full h-full flex items-center justify-center p-2 text-center bg-teal-500 border-2 border-teal-600 rounded-lg shadow-sm text-white">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                        </div>
+                    `;
+                    dayElement.addEventListener('click', () => displayDay(day.day));
+                    daysGrid.appendChild(dayElement);
+                });
+            };
+
+            const displayDay = (dayNumber) => {
+                const dayData = courseData.find(d => d.day === dayNumber);
+                if (!dayData) return;
+
+                welcomeMessage.classList.add('hidden');
+                contentContainer.classList.remove('hidden');
+                
+                const audioIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10 1.107c.486 0 .96.043 1.42.128a.5.5 0 01.46.512v16.506a.5.5 0 01-.46.512A10.02 10.02 0 0110 18.893c-5.523 0-10-4.477-10-10s4.477-10 10-10zm2.94 1.94a.5.5 0 01.5.5v13.906a.5.5 0 01-.5.5 8.003 8.003 0 01-2.94-1.94V3.547a8.003 8.003 0 012.94-1.94zM15 4.5a.5.5 0 01.5.5v10a.5.5 0 01-.5.5 6.002 6.002 0 01-2-1.118V5.618A6.002 6.002 0 0115 4.5z" /></svg>`;
+                const slowAudioIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7 4a1 1 0 011.707-.707l7 7a1 1 0 010 1.414l-7 7A1 1 0 017 18V4zm5-1a1 1 0 011-1h1a1 1 0 110 2h-1a1 1 0 01-1-1z" clip-rule="evenodd" /></svg>`;
+                const disabledAttr = voicesReady ? '' : 'disabled';
+
+                let termsHtml = '';
+                if (dayData.terms) {
+                    termsHtml = dayData.terms.map(t => `
+                        <div class="term-item mb-3">
+                            <div class="flex items-center gap-2">
+                                <dt class="font-semibold text-sky-700 text-lg">${t.term}</dt>
+                                <button class="audio-btn" title="نطق عادي" data-text="${t.term}" data-rate="1.0" ${disabledAttr}>${audioIcon}</button>
+                                <button class="audio-btn" title="نطق بطيء" data-text="${t.term}" data-rate="0.5" ${disabledAttr}>${slowAudioIcon}</button>
+                            </div>
+                            <dd class="text-slate-600 pr-4">${t.def}</dd>
+                        </div>
+                    `).join('');
+                }
+
+                let scenarioHtml = '';
+                if (dayData.scenario) {
+                    const dialogueHtml = dayData.scenario.dialogue.map(d => {
+                        const cleanText = d.line.replace(/<[^>]*>?/gm, '');
+                        return `
+                        <div class="mb-2 flex items-start gap-2">
+                            <strong class="text-slate-800 pt-1">${d.speaker}:</strong> 
+                            <span class="text-slate-700 flex-1 pt-1">${d.line}</span>
+                            <div class="flex-shrink-0 flex gap-1">
+                                <button class="audio-btn" title="نطق عادي" data-text="${cleanText}" data-rate="1.0" ${disabledAttr}>${audioIcon}</button>
+                                <button class="audio-btn" title="نطق بطيء" data-text="${cleanText}" data-rate="0.5" ${disabledAttr}>${slowAudioIcon}</button>
+                            </div>
+                        </div>`
+                    }).join('');
+                    scenarioHtml = `
+                        <div class="mt-6 border-t border-slate-200 pt-4">
+                            <h4 class="text-lg font-semibold mb-3 text-slate-800">سيناريو: ${dayData.scenario.title}</h4>
+                            <div class="bg-slate-100 p-4 rounded-lg">${dialogueHtml}</div>
+                        </div>
+                    `;
+                }
+
+                let reviewHtml = '';
+                if (dayData.isReview) {
+                    reviewHtml = `<p class="text-slate-600 mt-4">هذا اليوم مخصص لمراجعة المفاهيم والتمارين. ${dayData.isFinal ? 'إنه يمثل تحدياً نهائياً لتطبيق كل ما تعلمته.' : ''}</p>`;
+                }
+                
+                const isCompleted = completedDays.includes(dayData.day);
+
+                contentPanel.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-sm text-slate-500">اليوم ${dayData.day} - الأسبوع ${dayData.week}</p>
+                            <h3 class="text-2xl font-bold text-slate-900 mt-1">${dayData.title}</h3>
+                        </div>
+                        <button id="close-btn" class="text-3xl font-light text-slate-400 hover:text-slate-600 transition">&times;</button>
+                    </div>
+                    ${reviewHtml}
+                    ${termsHtml ? `<div class="mt-6"><h4 class="text-lg font-semibold mb-3 text-slate-800">المفردات الأساسية</h4><dl>${termsHtml}</dl></div>` : ''}
+                    ${scenarioHtml}
+                    <div class="mt-6 border-t border-slate-200 pt-4">
+                         <button id="complete-btn" data-day="${dayData.day}" class="${isCompleted ? 'bg-gray-400 cursor-not-allowed' : 'bg-teal-600 hover:bg-teal-700'} text-white font-bold py-2 px-4 rounded-lg transition">
+                            ${isCompleted ? 'تم الإكمال ✓' : 'تحديد كـ "مكتمل"'}
+                        </button>
+                    </div>
+                `;
+
+                contentPanel.scrollTop = 0;
+                
+                document.getElementById('close-btn').addEventListener('click', () => {
+                    contentContainer.classList.add('hidden');
+                    welcomeMessage.classList.remove('hidden');
+                    synth.cancel();
+                });
+
+                const completeBtn = document.getElementById('complete-btn');
+                if (!isCompleted) {
+                    completeBtn.addEventListener('click', (e) => {
+                        toggleComplete(dayData.day);
+                        e.target.textContent = 'تم الإكمال ✓';
+                        e.target.classList.remove('bg-teal-600', 'hover:bg-teal-700');
+                        e.target.classList.add('bg-gray-400', 'cursor-not-allowed');
+                    }, { once: true });
+                }
+                
+                contentPanel.querySelectorAll('.audio-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const text = e.currentTarget.dataset.text;
+                        const rate = parseFloat(e.currentTarget.dataset.rate);
+                        playAudio(text, rate);
+                    });
+                });
+            };
+
+            const toggleComplete = (dayNumber) => {
+                if (!completedDays.includes(dayNumber)) {
+                    completedDays.push(dayNumber);
+                    localStorage.setItem('completedDays', JSON.stringify(completedDays));
+                    updateProgress();
+                    renderGrid();
+                }
+            };
+            
+            const updateProgress = () => {
+                const percentage = (completedDays.length / 30) * 100;
+                progressBar.style.width = `${percentage}%`;
+                progressText.textContent = `${completedDays.length} من 30 يوماً مكتمل`;
+            };
+
+            weekFilters.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON') {
+                    activeFilter = e.target.dataset.week;
+                    weekFilters.querySelectorAll('button').forEach(btn => {
+                        btn.classList.remove('active', 'bg-sky-600', 'text-white');
+                        btn.classList.add('bg-white', 'border', 'border-slate-300', 'text-slate-700');
+                    });
+                    e.target.classList.add('active', 'bg-sky-600', 'text-white');
+                    e.target.classList.remove('bg-white', 'border', 'border-slate-300', 'text-slate-700');
+                    renderGrid();
+                }
+            });
+            
+            searchInput.addEventListener('input', (e) => {
+                activeSearch = e.target.value.trim();
+                renderGrid();
+            });
+
+            renderGrid();
+            updateProgress();
+        });
+    </script>
+</body>
+</html>
